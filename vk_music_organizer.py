@@ -86,6 +86,9 @@ class Cluster(object):
 		self.title = title
 		self.contents = contents
 
+	def __repr__(self):
+		return (u"'%s' (%d)" % (self.title, len(self.contents))).encode('utf-8')
+
 def preprocess(audios):
 	for audio in audios:
 		audio['artist'] = audio['artist'].strip()
@@ -157,7 +160,7 @@ def sort_audios(audios, album_names):
 	result = []
 	for album in albums:
 		album = clusterize(album)
-		merge_clusters(album)
+		album = merge_clusters(album)
 		album = flatten(cluster.contents for cluster in album)
 		result.append(album)
 
