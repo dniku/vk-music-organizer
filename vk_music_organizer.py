@@ -164,12 +164,6 @@ def sort_audios(audios, album_names):
 	result = flatten(result)
 	return result
 
-def reorder_audios(audios, result):
-	if result[0]['aid'] != audios[0]['aid']:
-		vk.reorder_audio(result[0]['aid'], before=audios[0]['aid'])
-	for i, audio in enumerate(result[1:10], 1):
-		vk.reorder_audio(audio['aid'], after=result[i - 1]['aid'])
-
 def save_audios(audios, filename):
 	def audio_to_string(audio):
 		return u'\n'.join(unicode(audio[key]) for key in ('aid', 'artist', 'title'))
@@ -199,7 +193,10 @@ def main(email, password):
 	if debug_mode:
 		save_audios(result, result_dump)
 
-	reorder_audios(audios, result)
+	if result[0]['aid'] != audios[0]['aid']:
+		vk.reorder_audio(result[0]['aid'], before=audios[0]['aid'])
+	for i, audio in enumerate(result[1:], 1):
+		vk.reorder_audio(audio['aid'], after=result[i - 1]['aid'])
 
 
 main(email=email, password=password)
