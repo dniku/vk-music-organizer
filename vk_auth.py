@@ -19,10 +19,10 @@ class FormParser(HTMLParser):
 
         if tag == 'form':
             if self.form_parsed:
-                raise RuntimeError('Given form is the second one on the page.')
+                raise RuntimeError('Two <form>s on the page.')
 
             if self.in_form:
-                raise RuntimeError('Tag is already in form.')
+                raise RuntimeError('Nested <form>s.')
 
             self.in_form = True
 
@@ -68,7 +68,7 @@ def auth_user(email, password, client_id, scope, opener):
         raise RuntimeError('Form wasn\'t parsed properly.')
 
     if not params.viewkeys() >= {'pass', 'email'}:
-        raise RuntimeError('Some essential data is missing on the form.')
+        raise RuntimeError('Some essential data is missing in the form.')
 
     params.update({'email': email, 'pass': password})
 
@@ -96,7 +96,9 @@ def give_access(doc, opener):
 
 
 def auth(email, password, client_id, scope):
-    scope = list(scope) # Ensure that scope is a list
+    # Ensuring that scope is a list
+    if not isinstance(scope, list):
+        scope = [scope]
 
     opener = urllib2.build_opener(
         urllib2.HTTPCookieProcessor(cookielib.CookieJar()),
@@ -110,7 +112,7 @@ def auth(email, password, client_id, scope):
         url = give_access(doc, opener)
 
     if urlparse(url).path != '/blank.html':
-        raise RuntimeError('Error occured while accessing to requested scope.')
+        raise RuntimeError('Error occured while accessing the requested scope.')
 
     def split_key_value(kv_pair):
         kv = kv_pair.split('=')
@@ -119,6 +121,6 @@ def auth(email, password, client_id, scope):
     answer = dict(split_key_value(kv_pair) for kv_pair in urlparse(url).fragment.split('&'))
 
     if not answer.viewkeys() >= {'access_token', 'user_id'}:
-        raise RuntimeError('Didn\'t gain full data while in the access answer.')
+        raise RuntimeError('Authorization failure: did not obtain complete data.')
 
     return answer['access_token'], answer['user_id']
