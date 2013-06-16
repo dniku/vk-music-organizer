@@ -7,20 +7,23 @@ from HTMLParser import HTMLParser
 class FormParser(HTMLParser):
     def __init__(self):
         HTMLParser.__init__(self)
+
         self.url = None
         self.params = {}
         self.in_form = False
         self.form_parsed = False
-        self.method = "GET"
+        self.method = 'GET'
 
     def handle_starttag(self, tag, attrs):
         tag = tag.lower()
 
-        if tag == "form":
+        if tag == 'form':
             if self.form_parsed:
-                raise RuntimeError("Second form on page")
+                raise RuntimeError('Given form is the second one on the page.')
+
             if self.in_form:
-                raise RuntimeError("Already in form")
+                raise RuntimeError('Tag is already in form.')
+
             self.in_form = True
 
         if not self.in_form:
@@ -28,20 +31,22 @@ class FormParser(HTMLParser):
 
         attrs = dict((name.lower(), value) for name, value in attrs)
 
-        if tag == "form":
-            self.url = attrs["action"] 
-            if "method" in attrs:
-                self.method = attrs["method"]
+        if tag == 'form':
+            self.url = attrs['action']
 
-        elif tag == "input" and "type" in attrs and "name" in attrs:
-            if attrs["type"] in ["hidden", "text", "password"]:
-                self.params[attrs["name"]] = attrs["value"] if "value" in attrs else ""
+            if 'method' in attrs:
+                self.method = attrs['method']
+        elif tag == 'input' and attrs.viewkeys() >= ['type', 'name'] and \
+            attrs['type'] in ['hidden', 'text', 'password']:
+            self.params[attrs['name']] = attrs['value'] if 'value' in attrs else ''
 
     def handle_endtag(self, tag):
         tag = tag.lower()
-        if tag == "form":
+
+        if tag == 'form':
             if not self.in_form:
-                raise RuntimeError("Unexpected end of <form>")
+                raise RuntimeError('Unexpected end of <form>.')
+
             self.in_form = False
             self.form_parsed = True
 
@@ -56,52 +61,64 @@ def auth_user(email, password, client_id, scope, opener):
     parser = FormParser()
     parser.feed(doc)
     parser.close()
-    
-    params = parser.params
-    if not parser.form_parsed or parser.url is None or \
-        "pass" not in params or "email" not in params:
-        raise RuntimeError("Something went wrong")
 
-    params["email"] = email
-    params["pass"] = password
-    if parser.method.lower() == "post":
+    params = parser.params
+
+    if not parser.form_parsed or parser.url is None:
+        raise RuntimeError('Form wasn\'t parsed properly.')
+
+    if not params.viewkeys() >= {'pass', 'email'}:
+        raise RuntimeError('Some essential data is missing on the form.')
+
+    params.update({'email': email, 'pass': password})
+
+    if parser.method.lower() == 'post':
         response = opener.open(parser.url, urllib.urlencode(params))
     else:
         raise NotImplementedError("Method '%s' is not supported" % parser.method)
+
     return response.read(), response.geturl()
 
 def give_access(doc, opener):
     parser = FormParser()
     parser.feed(doc)
     parser.close()
+
     if not parser.form_parsed or parser.url is None:
-          raise RuntimeError("Something went wrong")
-    if parser.method.lower() == "post":
+          raise RuntimeError('Form wasn\'t parsed properly.')
+
+    if parser.method.lower() == 'post':
         response = opener.open(parser.url, urllib.urlencode(parser.params))
     else:
         raise NotImplementedError("Method '%s' is not supported" % parser.method)
+
     return response.geturl()
 
 
 def auth(email, password, client_id, scope):
-    if not isinstance(scope, list):
-        scope = [scope]
+    scope = list(scope) # Ensure that scope is a list
+
     opener = urllib2.build_opener(
         urllib2.HTTPCookieProcessor(cookielib.CookieJar()),
         urllib2.HTTPRedirectHandler())
+
     # Entering login data
     doc, url = auth_user(email, password, client_id, scope, opener)
-    if urlparse(url).path != "/blank.html":
+
+    if urlparse(url).path != '/blank.html':
         # Need to give access to requested scope
         url = give_access(doc, opener)
-    if urlparse(url).path != "/blank.html":
-        raise RuntimeError("Expected success here")
+
+    if urlparse(url).path != '/blank.html':
+        raise RuntimeError('Error occured while accessing to requested scope.')
 
     def split_key_value(kv_pair):
-        kv = kv_pair.split("=")
+        kv = kv_pair.split('=')
         return kv[0], kv[1]
 
-    answer = dict(split_key_value(kv_pair) for kv_pair in urlparse(url).fragment.split("&"))
-    if "access_token" not in answer or "user_id" not in answer:
-        raise RuntimeError("Missing some values in answer")
-    return answer["access_token"], answer["user_id"] 
+    answer = dict(split_key_value(kv_pair) for kv_pair in urlparse(url).fragment.split('&'))
+
+    if not answer.viewkeys() >= {'access_token', 'user_id'}:
+        raise RuntimeError('Didn\'t gain full data while in the access answer.')
+
+    return answer['access_token'], answer['user_id']
