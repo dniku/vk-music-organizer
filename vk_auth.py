@@ -38,7 +38,6 @@ class FormParser(HTMLParser):
 				self.method = attrs['method']
 		elif tag == 'input' and attrs.viewkeys() >= {'type', 'name'} and \
 			attrs['type'] in ['hidden', 'text', 'password']:
-			print attrs
 			self.params[attrs['name']] = attrs['value'] if 'value' in attrs else ''
 
 	def handle_endtag(self, tag):
