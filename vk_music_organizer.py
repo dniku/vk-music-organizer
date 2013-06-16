@@ -6,7 +6,7 @@ from collections import defaultdict
 email = 'email@example.com'
 password = 'your_unbreakable_password'
 
-debug_mode = True
+debug_mode = False
 audios_cache = 'audios.json'
 albums_cache = 'albums.json'
 audios_dump = 'audios.txt'
