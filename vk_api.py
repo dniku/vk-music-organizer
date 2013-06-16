@@ -12,14 +12,14 @@ def call_api(method, params, token):
     time.sleep(max(0.0, 0.3333 - (time.clock() - last_time)))
 
     if isinstance(params, list):
-        params_list = [kv for kv in params]
+        params_list = params[:]
     elif isinstance(params, dict):
         params_list = params.items()
     else:
         params_list = [params]
 
-    params_list += [("access_token", token)]
-    url = "https://api.vk.com/method/%s?%s" % (method, urlencode(params_list))
+    params_list += [('access_token', token)]
+    url = 'https://api.vk.com/method/%s?%s' % (method, urlencode(params_list))
 
     response = urllib2.urlopen(url).read()
     last_time = time.clock()
