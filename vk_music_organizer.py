@@ -12,6 +12,14 @@ albums_cache = 'albums.json'
 audios_dump = 'audios.txt'
 result_dump = 'result.txt'
 
+import pprint as module_pprint
+class MyPrettyPrinter(module_pprint.PrettyPrinter):
+    def format(self, object, context, maxlevels, level):
+		if isinstance(object, unicode):
+			return ("u'%s'" % object.encode('utf-8'), True, False)
+		return module_pprint.PrettyPrinter.format(self, object, context, maxlevels, level)
+pprint = MyPrettyPrinter().pprint
+
 
 def load_json(filename):
     with open(filename, 'r') as f:
@@ -76,6 +84,11 @@ class VKApi(object):
             params['before'] = before
         if after:
             params['after'] = after
+            
+        if debug_mode:
+            before_piece = ' before track #%s' % before if before else ''
+            after_piece  = ' after track #%s'  % after  if after  else ''
+            print 'Inserting track #%s%s%s' % (audio_id, before_piece, after_piece)
 
         result = vk_api.call_api('audio.reorder', params, self.token)
         if result != 1:
