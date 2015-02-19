@@ -4,7 +4,7 @@ import vk_auth, vk_api
 from collections import defaultdict
 
 email = 'email@example.com'
-password = 'your_unbreakable_password'
+password = 'your_password'
 
 debug_mode = False
 audios_cache = 'audios.json'
